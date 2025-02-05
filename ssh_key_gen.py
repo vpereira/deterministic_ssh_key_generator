@@ -36,12 +36,11 @@ def derive_ed25519_private_key_from_seed(seed):
 
 def export_private_key_openssh(private_key):
     """
-    Export the Ed25519 private key in a PEM (PKCS#8) format
-    that modern OpenSSH (>=7.8) can use.
+    Export the Ed25519 private key in OpenSSH native format
     """
     return private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
+        format=serialization.PrivateFormat.OpenSSH,
         encryption_algorithm=serialization.NoEncryption(),
     )
 
