@@ -64,8 +64,12 @@ if __name__ == "__main__":
         description="Generate an Ed25519 key pair from a seed.",
         prog="ssh_key_gen.py",
     )
-    parser.add_argument("--seed", type=str, default="", help="Seed for deterministic key generation.")
-    parser.add_argument("--comment", type=str, default="", help="Comment string for the public key.")
+    parser.add_argument(
+        "--seed", type=str, default="", help="Seed for deterministic key generation."
+    )
+    parser.add_argument(
+        "--comment", type=str, default="", help="Comment string for the public key."
+    )
 
     args = parser.parse_args()
 
