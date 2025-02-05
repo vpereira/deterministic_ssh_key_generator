@@ -51,7 +51,7 @@ jobs:
           docker-compose exec -T ssh-client \
             scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
                 -i /tmp/id_ed25519 ubuntu@ssh-server:/etc/os-release /tmp/
-          docker-compose exec -T ssh-server ls -l /tmp/os-release
+          docker-compose exec -T ssh-client ls -l /tmp/os-release
 
       - name: Stop containers
         run: docker-compose down
