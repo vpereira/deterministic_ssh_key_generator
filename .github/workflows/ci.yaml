@@ -43,14 +43,14 @@ jobs:
       - name: Test ssh-keygen in client
         run: |
           set -eux
-          docker-compose exec -T ssh-client ssh-keygen -y -f /tmp/id_ecdsa
+          docker-compose exec -T ssh-client ssh-keygen -y -f /tmp/id_ed25519
 
       - name: Test scp from client
         run: |
           set -eux
           docker-compose exec -T ssh-client \
             scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                -i /tmp/id_ecdsa ubuntu@ssh-server:/etc/os-release /tmp/
+                -i /tmp/id_ed25519 ubuntu@ssh-server:/etc/os-release /tmp/
 
       - name: Stop containers
         run: docker-compose down
