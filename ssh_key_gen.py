@@ -22,6 +22,7 @@ def generate_comment():
     hostname = os.getenv("HOSTNAME", "unknown_host")
     return f"{user}@{hostname}"
 
+
 def derive_ecdsa_private_key_from_seed(seed):
     """
     Derive a deterministic ECDSA private key object (on secp256r1) from a given seed.
@@ -78,16 +79,10 @@ if __name__ == "__main__":
         prog="ssh_key_gen.py",
     )
 
-    parser.add_argument(
-        "--seed",
-        type=str,
-        default="")
-    
-    parser.add_argument(
-        "--comment",
-        type=str,
-        default="")
-    
+    parser.add_argument("--seed", type=str, default="")
+
+    parser.add_argument("--comment", type=str, default="")
+
     args = parser.parse_args()
 
     seed = args.seed
@@ -95,7 +90,6 @@ if __name__ == "__main__":
     if not seed:
         print("Please provide a seed with --seed argument.")
         sys.exit(1)
-    
 
     comment = args.comment
 
