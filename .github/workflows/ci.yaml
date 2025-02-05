@@ -55,3 +55,26 @@ jobs:
 
       - name: Stop containers
         run: docker-compose down
+
+      - name: Compare generated keys to reference
+        run: |
+          set -eux
+      
+          # Read the single line "foobar;ubuntu@foobar.home" from tests/seed.txt
+          line=$(cat tests/seed.txt)
+      
+          # Parse the line, splitting at the semicolon
+          IFS=';' read -r SEED COMMENT <<< "$line"
+      
+          echo "Using seed=$SEED comment=$COMMENT"
+      
+          # Remove any existing local files from previous steps
+          rm -f id_ed25519 id_ed25519.pub
+      
+          # Generate keys from the script
+          python3 ssh_key_gen.py --seed "$SEED" --comment "$COMMENT"
+      
+          # Compare with reference files in tests/
+          diff id_ed25519 tests/id_ed25519
+          diff id_ed25519.pub tests/id_ed25519.pub
+      

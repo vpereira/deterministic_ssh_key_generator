@@ -88,13 +88,13 @@ if __name__ == "__main__":
     # 1. Derive the private key
     priv_key = derive_ed25519_private_key_from_seed(seed)
 
-    # 2. Export private key (PEM, PKCS#8)
+    # 2. Export private key (PEM, OpenSSH format)
     private_key_pem = export_private_key_openssh(priv_key)
 
     # 3. Export public key (OpenSSH format)
     public_key_ssh = export_public_key_openssh(priv_key, comment)
 
-    print("=== Private Key (PEM, PKCS#8) ===")
+    print("=== Private Key (PEM, OpenSSH) ===")
     print(private_key_pem.decode())
 
     print("=== Public Key (OpenSSH) ===")
