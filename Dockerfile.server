@@ -11,7 +11,7 @@ RUN mkdir -p /home/ubuntu/.ssh && \
     chown -R ubuntu:users /home/ubuntu/.ssh
 
 # Copy your public key into authorized_keys
-COPY id_ecdsa.pub /home/ubuntu/.ssh/authorized_keys
+COPY id_ed25519.pub /home/ubuntu/.ssh/authorized_keys
 RUN chown  ubuntu:users /home/ubuntu/.ssh/authorized_keys && \
     chmod 600 /home/ubuntu/.ssh/authorized_keys
 

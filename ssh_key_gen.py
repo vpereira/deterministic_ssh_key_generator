@@ -2,55 +2,42 @@ import sys
 import argparse
 import hashlib
 import os
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
-
-# The order of the secp256r1 (NIST P-256) curve:
-# https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf#page=101
-# just transformed the integer n to hex
-# group_order will be available on cryptography 45.0.0
-SECP256R1_ORDER = int(
-    "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6BAAEDCE6AF48A03BBFD25E8CD036", 16
-)
 
 
 def generate_comment():
     """
-    Generate a comment for the SSH key.
+    Generate a comment for the SSH key, e.g. "user@hostname".
     """
     user = os.getenv("USER", "unknown_user")
     hostname = os.getenv("HOSTNAME", "unknown_host")
     return f"{user}@{hostname}"
 
 
-def derive_ecdsa_private_key_from_seed(seed):
+def derive_ed25519_private_key_from_seed(seed):
     """
-    Derive a deterministic ECDSA private key object (on secp256r1) from a given seed.
-    Returns a cryptography 'EllipticCurvePrivateKey' object.
+    Derive a deterministic Ed25519 private key from a given seed (string or bytes).
+    1. Convert to bytes if it's a string
+    2. Hash with SHA-256 -> 32 bytes
+    3. Create Ed25519PrivateKey from that 32-byte digest
     """
-    # Convert seed to bytes if it's a string
     if isinstance(seed, str):
         seed_bytes = seed.encode("utf-8")
     else:
         seed_bytes = seed
 
-    # 1. Hash the seed to get 256 bits
-    digest = hashlib.sha256(seed_bytes).digest()
-    # 2. Convert to integer
-    priv_int = int.from_bytes(digest, "big")
-    # 3. Force it into the valid range [1, order-1]
-    priv_int_mod = (priv_int % (SECP256R1_ORDER - 1)) + 1
-
-    # 4. Create a private key object from that integer
-    private_key = ec.derive_private_key(priv_int_mod, ec.SECP256R1())
+    # Hash the seed to get exactly 32 bytes
+    digest = hashlib.sha256(seed_bytes).digest()  # 32 bytes
+    # Create the Ed25519 private key from these 32 bytes
+    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(digest)
     return private_key
 
 
 def export_private_key_openssh(private_key):
     """
-    Export the ECDSA private key in a PEM format that OpenSSH can use.
-    For modern versions of OpenSSH (>= 7.8), PKCS#8 is supported.
-    Returns the key in PEM bytes.
+    Export the Ed25519 private key in a PEM (PKCS#8) format
+    that modern OpenSSH (>=7.8) can use.
     """
     return private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
@@ -61,46 +48,42 @@ def export_private_key_openssh(private_key):
 
 def export_public_key_openssh(private_key, comment):
     """
-    Export the corresponding ECDSA public key in the SSH authorized_keys format,
-    e.g. 'ecdsa-sha2-nistp256 AAAAB3NzaC1lZDI1NTE5....'
+    Export the corresponding Ed25519 public key in the standard OpenSSH
+    authorized_keys format: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...' plus a comment.
     """
     public_key = private_key.public_key()
     pub_bytes = public_key.public_bytes(
         encoding=serialization.Encoding.OpenSSH,
         format=serialization.PublicFormat.OpenSSH,
     )
-    # pub_bytes is something like b'ecdsa-sha2-nistp256 AAAAB3NzaC1...'
+    # pub_bytes looks like b'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5...'
     return pub_bytes + b" " + comment.encode()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate an ECDSA key pair from a seed.",
+        description="Generate an Ed25519 key pair from a seed.",
         prog="ssh_key_gen.py",
     )
-
-    parser.add_argument("--seed", type=str, default="")
-
-    parser.add_argument("--comment", type=str, default="")
+    parser.add_argument("--seed", type=str, default="", help="Seed for deterministic key generation.")
+    parser.add_argument("--comment", type=str, default="", help="Comment string for the public key.")
 
     args = parser.parse_args()
 
     seed = args.seed
-
     if not seed:
         print("Please provide a seed with --seed argument.")
         sys.exit(1)
 
     comment = args.comment
-
     if not comment:
         comment = generate_comment()
 
-    private_key_name = "id_ecdsa"
-    public_key_name = "id_ecdsa.pub"
+    private_key_name = "id_ed25519"
+    public_key_name = "id_ed25519.pub"
 
     # 1. Derive the private key
-    priv_key = derive_ecdsa_private_key_from_seed(seed)
+    priv_key = derive_ed25519_private_key_from_seed(seed)
 
     # 2. Export private key (PEM, PKCS#8)
     private_key_pem = export_private_key_openssh(priv_key)
@@ -114,11 +97,10 @@ if __name__ == "__main__":
     print("=== Public Key (OpenSSH) ===")
     print(public_key_ssh.decode())
 
-    # write to files. Maybe it should be controlled by arguments
-    # add permission 0600 to private_key.pem
+    # Write to files
     with open(private_key_name, "wb") as f:
         f.write(private_key_pem)
-    # set permission to 0600 (octal)  - read and write only for owner
+    # chmod 0600 (owner read/write only)
     os.chmod(private_key_name, 0o600)
 
     with open(public_key_name, "wb") as f:

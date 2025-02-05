@@ -16,4 +16,4 @@ then run the script to generate your keys like:
 
 `python3 ssh_key_gen.py --seed $SEED --comment foo@bar.home`
 
-store your `$SEED` in a safe place and integrate this tool with your, for instance devops processes
+store your `$SEED` in a safe place and integrate this tool with your, for instance, devops processes
