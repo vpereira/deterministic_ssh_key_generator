@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test-ssh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+          docker-compose --version
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate SSH keys
+        run: |
+          python ssh_key_gen.py --seed foobar --comment "ubuntu@foobar.home"
+          ls -l
+
+      - name: Build containers
+        run: docker-compose build
+
+      - name: Start containers
+        run: docker-compose up -d
+
+      - name: Test ssh-keygen in client
+        run: |
+          set -eux
+          docker-compose exec -T ssh-client ssh-keygen -y -f /tmp/id_ecdsa
+
+      - name: Test scp from client
+        run: |
+          set -eux
+          docker-compose exec -T ssh-client \
+            scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                -i /tmp/id_ecdsa ubuntu@ssh-server:/etc/os-release /tmp/
+
+      - name: Stop containers
+        run: docker-compose down

@@ -1,0 +1,19 @@
+services:
+  ssh-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: ssh-server
+    ports:
+      - "2222:22"
+
+  ssh-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: ssh-client
+    depends_on:
+      - ssh-server
+    tty: true
+    stdin_open: true
+

@@ -1,0 +1,11 @@
+FROM ubuntu:latest
+
+# Install SSH client
+RUN apt-get update && apt-get install -y openssh-client
+
+COPY id_ecdsa /tmp/id_ecdsa
+COPY id_ecdsa.pub /tmp/id_ecdsa.pub
+
+# Keep the container running so we can exec into it
+CMD tail -f /dev/null
+

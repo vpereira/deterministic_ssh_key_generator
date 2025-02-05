@@ -1,0 +1,20 @@
+FROM ubuntu:latest
+
+# Install SSH server
+RUN apt-get update && apt-get install -y openssh-server
+
+# Create the privilege separation directory that sshd needs
+RUN mkdir -p /run/sshd
+
+# Prepare SSH folder for testuser
+RUN mkdir -p /home/ubuntu/.ssh && \
+    chown -R ubuntu:users /home/ubuntu/.ssh
+
+# Copy your public key into authorized_keys
+COPY id_ecdsa.pub /home/ubuntu/.ssh/authorized_keys
+RUN chown  ubuntu:users /home/ubuntu/.ssh/authorized_keys && \
+    chmod 600 /home/ubuntu/.ssh/authorized_keys
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+
